@@ -1,0 +1,124 @@
+openapi: 3.0.3
+info:
+  title: Backend API
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000
+security:
+  - auth0: []
+paths:
+  /me:
+    get:
+      summary: Who the signed-in person is
+      responses:
+        '200':
+          description: The caller's HR admin flag
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [isHrAdmin]
+                properties:
+                  isHrAdmin: { type: boolean }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /hiring-managers:
+    get:
+      summary: List hiring managers
+      responses:
+        '200':
+          description: Hiring managers
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/HiringManager' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /openings:
+    get:
+      summary: List job openings, oldest first
+      responses:
+        '200':
+          description: Job openings
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/JobOpening' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      summary: Create a job opening (HR admins only); it is saved as a Draft
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NewOpening' }
+      responses:
+        '201':
+          description: The created opening
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/JobOpening' }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Error' }
+  /openings/{id}/publish:
+    post:
+      summary: Publish a Draft opening (HR admins only)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: The published opening
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/JobOpening' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+components:
+  securitySchemes:
+    auth0:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  responses:
+    Unauthorized:
+      description: No valid Auth0 token
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Error:
+      description: The request was refused
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error: { type: string }
+    HiringManager:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: string }
+        name: { type: string }
+    NewOpening:
+      type: object
+      required: [title, hiringManagerId, vacancies]
+      properties:
+        title: { type: string, minLength: 1 }
+        hiringManagerId: { type: string, minLength: 1 }
+        vacancies: { type: integer, minimum: 1 }
+    JobOpening:
+      type: object
+      required: [id, title, hiringManager, vacancies, status, createdAt]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        hiringManager: { $ref: '#/components/schemas/HiringManager' }
+        vacancies: { type: integer, minimum: 1 }
+        status: { type: string, enum: [Draft, Published] }
+        createdAt: { type: string, format: date-time }
