@@ -4,9 +4,11 @@ components:
     name: Backend API
     repo_ref: conn-github-15a2410a453040ef98d418c7aa7e829a
     kind: api_service
+    directory: services/api
     integrations:
     - to: comp_relational_database
       interaction: sync
+      via: postgresql
       status: planned
       evidence: one backend API with a relational database
       label: SQL
@@ -23,6 +25,16 @@ components:
     rule: All business logic and database access go through the Backend API; the Web
       App never talks to the database directly.
     adr: ADR-0001
+    stack:
+      choices:
+        database: postgresql
+        language: typescript
+        framework: fastify
+        package_manager: pnpm
+        testing_tool_e2e: playwright
+        testing_tool_unit: vitest
+      notes: styling not applicable — API only; TypeScript chosen by the human for
+        one language across the repo
   comp_relational_database:
     name: Relational Database
     repo_ref: conn-github-15a2410a453040ef98d418c7aa7e829a
@@ -31,6 +43,9 @@ components:
     rule: Only the Backend API reads and writes the Relational Database, which runs
       on PostgreSQL.
     adr: ADR-0002
+    stack:
+      choices:
+        managed_service: PostgreSQL
   comp_identity_provider:
     name: Identity Provider
     repo_ref: conn-github-15a2410a453040ef98d418c7aa7e829a
@@ -50,3 +65,6 @@ components:
     rule: Users authenticate only through Auth0; the Backend API accepts only tokens
       issued by it.
     adr: ADR-0003
+    stack:
+      choices:
+        managed_service: Auth0
