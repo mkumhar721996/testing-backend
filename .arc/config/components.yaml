@@ -1,0 +1,52 @@
+version: 2
+components:
+  comp_backend_api:
+    name: Backend API
+    repo_ref: conn-github-15a2410a453040ef98d418c7aa7e829a
+    kind: api_service
+    integrations:
+    - to: comp_relational_database
+      interaction: sync
+      status: planned
+      evidence: one backend API with a relational database
+      label: SQL
+    - to: comp_identity_provider
+      interaction: sync
+      via: http
+      auth:
+        scheme: jwt
+        idp: comp_identity_provider
+      status: planned
+      evidence: Sign-in only, with a managed identity provider
+      label: Token validation
+    zone: application
+    rule: All business logic and database access go through the Backend API; the Web
+      App never talks to the database directly.
+    adr: ADR-0001
+  comp_relational_database:
+    name: Relational Database
+    repo_ref: conn-github-15a2410a453040ef98d418c7aa7e829a
+    kind: infrastructure
+    zone: data
+    rule: Only the Backend API reads and writes the Relational Database, which runs
+      on PostgreSQL.
+    adr: ADR-0002
+  comp_identity_provider:
+    name: Identity Provider
+    repo_ref: conn-github-15a2410a453040ef98d418c7aa7e829a
+    kind: managed_service
+    identity:
+      provider: auth0
+      hosting: managed
+      protocols:
+      - oidc
+      - oauth2
+      - jwt
+      flows:
+      - authorization_code_pkce
+      token: jwt
+      user_store: provider
+    zone: external
+    rule: Users authenticate only through Auth0; the Backend API accepts only tokens
+      issued by it.
+    adr: ADR-0003
