@@ -1,0 +1,23 @@
+components:
+  comp_backend_api:
+    mode: local
+    e2e_command: cd services/api && pnpm e2e
+    test_command: cd services/api && pnpm test
+    build_command: cd services/api && pnpm build
+    start_command: cd services/api && HOST={host} PORT={port} pnpm dev
+    devloop_command: cd services/api && pnpm devloop
+    port_env: COMP_BACKEND_API_PORT
+    base_port: 8080
+    ready_check:
+      url: http://localhost:{port}/
+commands:
+  test: cd services/api && pnpm test
+  build: cd services/api && pnpm build
+  devloop: cd services/api && pnpm devloop
+ui_tests:
+  framework: playwright
+  command: cd services/api && pnpm exec playwright test
+setup_command: cd services/api && pnpm install --frozen-lockfile
+toolchain:
+  node: '22'
+  pnpm: 12.9.1
