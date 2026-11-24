@@ -6,6 +6,7 @@ import { PgOpeningsRepository } from './openings/pgRepository.js';
 
 const config = loadConfig();
 const app = buildApp({
+  webOrigin: config.webOrigin,
   repository: new PgOpeningsRepository(createPool(config.databaseUrl)),
   authenticate: createAuth0Authenticator({
     issuer: config.auth0Issuer,

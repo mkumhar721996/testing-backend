@@ -6,6 +6,7 @@ export interface Config {
   auth0Audience: string;
   rolesClaim: string;
   hrAdminRole: string;
+  webOrigin: string;
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
@@ -19,5 +20,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     // Placeholder namespace until the real Auth0 roles claim is confirmed.
     rolesClaim: env.AUTH0_ROLES_CLAIM ?? 'https://onboarding.example/roles',
     hrAdminRole: env.AUTH0_HR_ADMIN_ROLE ?? 'hr_admin',
+    // Origin of the Web App (Vite dev server by default); set WEB_ORIGIN in other environments.
+    webOrigin: env.WEB_ORIGIN ?? 'http://localhost:5173',
   };
 }
