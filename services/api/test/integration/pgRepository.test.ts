@@ -28,4 +28,14 @@ describe.skipIf(!url)('PgOpeningsRepository', () => {
     expect(await repo.publish(created!.id)).toMatchObject({ status: 'Published' });
     expect(await repo.publish(created!.id)).toBe('already_published');
   });
+
+  it('closes a Published opening once; Drafts and unknown ids are refused', async () => {
+    const created = await repo.create({ title: 'Analyst', hiringManagerId: managerId, vacancies: 3 });
+    expect(await repo.close(created!.id)).toBe('not_published');
+    await repo.publish(created!.id);
+    expect(await repo.close(created!.id)).toMatchObject({ status: 'Closed' });
+    expect(await repo.close(created!.id)).toBe('not_published');
+    expect(await repo.close('00000000-0000-4000-8000-000000000000')).toBe('not_found');
+    expect(await repo.close('not-a-uuid')).toBe('not_found');
+  });
 });

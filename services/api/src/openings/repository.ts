@@ -10,5 +10,6 @@ export interface OpeningsRepository {
   /** Returns null when the hiring manager does not exist. */
   create(n: NewOpening): Promise<JobOpening | null>;
   publish(id: string): Promise<JobOpening | 'not_found' | 'already_published'>;
+  close(id: string): Promise<JobOpening | 'not_found' | 'not_published'>;
   listHiringManagers(): Promise<HiringManager[]>;
 }

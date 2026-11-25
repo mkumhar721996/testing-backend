@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   canAcceptApplications,
+  close,
   OpeningAlreadyPublishedError,
+  OpeningNotPublishedError,
   publish,
   type JobOpening,
 } from '../../src/openings/domain.js';
@@ -28,5 +30,15 @@ describe('opening domain', () => {
   it('throws when publishing a Published opening', () => {
     const published = publish(draft);
     expect(() => publish({ ...published })).toThrow(OpeningAlreadyPublishedError);
+  });
+});
+
+describe('closing an opening', () => {
+  it('refuses applications once Closed and only closes a Published opening', () => {
+    const published = publish(draft);
+    expect(canAcceptApplications(close(published))).toBe(false);
+    expect(close(published).status).toBe('Closed');
+    expect(() => close(draft)).toThrow(OpeningNotPublishedError);
+    expect(() => close(close(published))).toThrow(OpeningNotPublishedError);
   });
 });

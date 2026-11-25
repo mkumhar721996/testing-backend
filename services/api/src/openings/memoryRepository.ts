@@ -1,5 +1,10 @@
 import { randomUUID } from 'node:crypto';
-import { OpeningAlreadyPublishedError, publish, type JobOpening, type NewOpening } from './domain.js';
+import {
+  close,
+  OpeningAlreadyPublishedError,
+  OpeningNotPublishedError,
+  publish,
+  type JobOpening, type NewOpening } from './domain.js';
 import type { HiringManager, OpeningsRepository } from './repository.js';
 
 export class MemoryOpeningsRepository implements OpeningsRepository {
@@ -33,6 +38,18 @@ export class MemoryOpeningsRepository implements OpeningsRepository {
       this.openings[index] = publish(this.openings[index]);
     } catch (err) {
       if (err instanceof OpeningAlreadyPublishedError) return 'already_published';
+      throw err;
+    }
+    return this.openings[index];
+  }
+
+  async close(id: string): Promise<JobOpening | 'not_found' | 'not_published'> {
+    const index = this.openings.findIndex((o) => o.id === id);
+    if (index < 0) return 'not_found';
+    try {
+      this.openings[index] = close(this.openings[index]);
+    } catch (err) {
+      if (err instanceof OpeningNotPublishedError) return 'not_published';
       throw err;
     }
     return this.openings[index];
