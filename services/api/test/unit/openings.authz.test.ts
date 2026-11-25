@@ -35,3 +35,15 @@ describe('authorisation', () => {
     expect((await app.inject({ method: 'GET', url: '/openings', headers: hr })).statusCode).toBe(200);
   });
 });
+
+describe('close authorisation', () => {
+  it('refuses close for a non-HR user and without a token (AC2)', async () => {
+    const { app, repo } = setup();
+    const draft = await repo.create({ title: 'Designer', hiringManagerId: mgr.id, vacancies: 1 });
+    await repo.publish(draft!.id);
+    const url = `/openings/${draft!.id}/close`;
+    expect((await app.inject({ method: 'POST', url, headers: nonHr })).statusCode).toBe(403);
+    expect((await app.inject({ method: 'POST', url })).statusCode).toBe(401);
+    expect((await repo.list())[0].status).toBe('Published');
+  });
+});

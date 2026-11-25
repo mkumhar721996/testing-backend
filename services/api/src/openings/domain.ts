@@ -1,4 +1,4 @@
-export type OpeningStatus = 'Draft' | 'Published';
+export type OpeningStatus = 'Draft' | 'Published' | 'Closed';
 
 export interface JobOpening {
   id: string;
@@ -22,9 +22,22 @@ export class OpeningAlreadyPublishedError extends Error {
   }
 }
 
-// The single guard the future application story must call to refuse applications against a Draft.
+export class OpeningNotPublishedError extends Error {
+  constructor() {
+    super('Opening is not published');
+    this.name = 'OpeningNotPublishedError';
+  }
+}
+
+// The single guard the future application story must call to refuse applications against a Draft or Closed opening.
 export function canAcceptApplications(o: Pick<JobOpening, 'status'>): boolean {
   return o.status === 'Published';
+}
+
+// Closing changes only the opening; applications already in progress are left alone.
+export function close(o: JobOpening): JobOpening {
+  if (o.status !== 'Published') throw new OpeningNotPublishedError();
+  return { ...o, status: 'Closed' };
 }
 
 export function publish(o: JobOpening): JobOpening {

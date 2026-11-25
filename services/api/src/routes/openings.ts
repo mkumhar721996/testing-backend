@@ -65,5 +65,16 @@ export function openingsRoutes(deps: { repository: OpeningsRepository; authentic
         return result;
       },
     );
+
+    app.post<{ Params: { id: string } }>(
+      '/openings/:id/close',
+      { onRequest: requireHrAdmin },
+      async (req, reply) => {
+        const result = await repository.close(req.params.id);
+        if (result === 'not_found') return reply.code(404).send({ error: 'Opening not found.' });
+        if (result === 'not_published') return reply.code(409).send({ error: 'Only a published opening can be closed.' });
+        return result;
+      },
+    );
   };
 }

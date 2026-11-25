@@ -57,6 +57,17 @@ export class PgOpeningsRepository implements OpeningsRepository {
     return existing ? 'already_published' : 'not_found';
   }
 
+  async close(id: string): Promise<JobOpening | 'not_found' | 'not_published'> {
+    if (!UUID.test(id)) return 'not_found';
+    const { rows } = await this.pool.query<{ id: string }>(
+      `update job_openings set status = 'Closed' where id = $1 and status = 'Published' returning id`,
+      [id],
+    );
+    if (rows.length > 0) return (await this.get(id)) ?? 'not_found';
+    const existing = await this.get(id);
+    return existing ? 'not_published' : 'not_found';
+  }
+
   async listHiringManagers(): Promise<HiringManager[]> {
     const { rows } = await this.pool.query<HiringManager>('select id, name from hiring_managers order by name');
     return rows;

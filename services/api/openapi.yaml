@@ -76,6 +76,21 @@ paths:
         '403': { $ref: '#/components/responses/Error' }
         '404': { $ref: '#/components/responses/Error' }
         '409': { $ref: '#/components/responses/Error' }
+  /openings/{id}/close:
+    post:
+      summary: Close a Published opening so it no longer accepts applications (HR admins only)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: The closed opening
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/JobOpening' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
 components:
   securitySchemes:
     auth0:
@@ -120,5 +135,5 @@ components:
         title: { type: string }
         hiringManager: { $ref: '#/components/schemas/HiringManager' }
         vacancies: { type: integer, minimum: 1 }
-        status: { type: string, enum: [Draft, Published] }
+        status: { type: string, enum: [Draft, Published, Closed] }
         createdAt: { type: string, format: date-time }
