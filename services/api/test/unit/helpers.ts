@@ -1,3 +1,5 @@
+import type { FastifyInstance } from 'fastify';
+import { MemoryApplicationsRepository } from '../../src/applications/memoryRepository.js';
 import { buildApp } from '../../src/app.js';
 import type { Authenticator } from '../../src/auth.js';
 import { MemoryOpeningsRepository } from '../../src/openings/memoryRepository.js';
@@ -15,8 +17,16 @@ const authenticate: Authenticator = async (header) => {
 
 export function setup() {
   const repo = new MemoryOpeningsRepository([mgr]);
-  const app = buildApp({ repository: repo, authenticate });
-  return { app, repo };
+  const applications = new MemoryApplicationsRepository(repo);
+  const app = buildApp({ repository: repo, applications, authenticate });
+  return { app, repo, applications };
 }
 
 export const valid = { title: 'Senior backend engineer', hiringManagerId: mgr.id, vacancies: 2 };
+
+export async function createPublishedOpening(app: FastifyInstance, title = valid.title) {
+  const created = await app.inject({ method: 'POST', url: '/openings', headers: hr, payload: { ...valid, title } });
+  const { id } = created.json();
+  const published = await app.inject({ method: 'POST', url: `/openings/${id}/publish`, headers: hr });
+  return published.json() as { id: string; title: string };
+}

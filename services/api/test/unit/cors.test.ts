@@ -1,10 +1,19 @@
 import { describe, expect, it } from 'vitest';
+import { MemoryApplicationsRepository } from '../../src/applications/memoryRepository.js';
 import { buildApp } from '../../src/app.js';
 import { MemoryOpeningsRepository } from '../../src/openings/memoryRepository.js';
 
 const origin = 'http://localhost:5173';
 const build = (webOrigin?: string) =>
-  buildApp({ repository: new MemoryOpeningsRepository([]), authenticate: async () => null, webOrigin });
+{
+  const repository = new MemoryOpeningsRepository([]);
+  return buildApp({
+    repository,
+    applications: new MemoryApplicationsRepository(repository),
+    authenticate: async () => null,
+    webOrigin,
+  });
+};
 
 describe('CORS', () => {
   it('answers a preflight from the allowed origin', async () => {

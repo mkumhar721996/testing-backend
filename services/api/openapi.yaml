@@ -76,6 +76,52 @@ paths:
         '403': { $ref: '#/components/responses/Error' }
         '404': { $ref: '#/components/responses/Error' }
         '409': { $ref: '#/components/responses/Error' }
+  /applications:
+    get:
+      summary: List applications with their opening's title (signed-in staff)
+      responses:
+        '200':
+          description: Applications, oldest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Application' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      summary: Submit an application against one published opening; confirmAdditionalOpening needs sign-in
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/NewApplication' }
+      responses:
+        '201':
+          description: The created application
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Application' }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409':
+          description: Opening is not published, or staff must confirm an additional opening (code confirmation_required)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+  /applications/{id}:
+    get:
+      summary: View one application with its opening's title (signed-in staff)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: The application
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Application' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/Error' }
 components:
   securitySchemes:
     auth0:
@@ -99,6 +145,24 @@ components:
       required: [error]
       properties:
         error: { type: string }
+    Application:
+      type: object
+      required: [id, openingId, openingTitle, candidateName, candidateEmail, createdAt]
+      properties:
+        id: { type: string }
+        openingId: { type: string }
+        openingTitle: { type: string }
+        candidateName: { type: string }
+        candidateEmail: { type: string }
+        createdAt: { type: string, format: date-time }
+    NewApplication:
+      type: object
+      required: [openingId, candidateName, candidateEmail]
+      properties:
+        openingId: { type: string }
+        candidateName: { type: string }
+        candidateEmail: { type: string }
+        confirmAdditionalOpening: { type: boolean }
     HiringManager:
       type: object
       required: [id, name]
