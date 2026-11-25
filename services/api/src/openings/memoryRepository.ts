@@ -1,5 +1,13 @@
 import { randomUUID } from 'node:crypto';
-import { OpeningAlreadyPublishedError, publish, type JobOpening, type NewOpening } from './domain.js';
+import {
+  applyEdit,
+  OpeningAlreadyPublishedError,
+  publish,
+  VacanciesLockedError,
+  type JobOpening,
+  type NewOpening,
+  type OpeningEdit,
+} from './domain.js';
 import type { HiringManager, OpeningsRepository } from './repository.js';
 
 export class MemoryOpeningsRepository implements OpeningsRepository {
@@ -17,6 +25,7 @@ export class MemoryOpeningsRepository implements OpeningsRepository {
     const opening: JobOpening = {
       id: randomUUID(),
       title: n.title,
+      description: '',
       hiringManager: { ...manager },
       vacancies: n.vacancies,
       status: 'Draft',
@@ -36,6 +45,22 @@ export class MemoryOpeningsRepository implements OpeningsRepository {
       throw err;
     }
     return this.openings[index];
+  }
+
+  async update(id: string, e: OpeningEdit): Promise<JobOpening | 'not_found' | 'vacancies_locked'> {
+    const index = this.openings.findIndex((o) => o.id === id);
+    if (index < 0) return 'not_found';
+    try {
+      this.openings[index] = applyEdit(this.openings[index], e);
+    } catch (err) {
+      if (err instanceof VacanciesLockedError) return 'vacancies_locked';
+      throw err;
+    }
+    return this.openings[index];
+  }
+
+  async listPublished(): Promise<JobOpening[]> {
+    return this.openings.filter((o) => o.status === 'Published');
   }
 
   async listHiringManagers(): Promise<HiringManager[]> {

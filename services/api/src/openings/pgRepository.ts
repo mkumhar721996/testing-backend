@@ -1,14 +1,15 @@
 import type pg from 'pg';
-import type { JobOpening, NewOpening } from './domain.js';
+import type { JobOpening, NewOpening, OpeningEdit } from './domain.js';
 import type { HiringManager, OpeningsRepository } from './repository.js';
 
-const SELECT = `select o.id, o.title, o.vacancies, o.status, o.created_at,
+const SELECT = `select o.id, o.title, o.description, o.vacancies, o.status, o.created_at,
   m.id as manager_id, m.name as manager_name
   from job_openings o join hiring_managers m on m.id = o.hiring_manager_id`;
 
 interface Row {
   id: string;
   title: string;
+  description: string;
   vacancies: number;
   status: JobOpening['status'];
   created_at: Date;
@@ -19,6 +20,7 @@ interface Row {
 const toOpening = (r: Row): JobOpening => ({
   id: r.id,
   title: r.title,
+  description: r.description,
   hiringManager: { id: r.manager_id, name: r.manager_name },
   vacancies: r.vacancies,
   status: r.status,
@@ -55,6 +57,24 @@ export class PgOpeningsRepository implements OpeningsRepository {
     if (rows.length > 0) return (await this.get(id)) ?? 'not_found';
     const existing = await this.get(id);
     return existing ? 'already_published' : 'not_found';
+  }
+
+  async update(id: string, e: OpeningEdit): Promise<JobOpening | 'not_found' | 'vacancies_locked'> {
+    if (!UUID.test(id)) return 'not_found';
+    // One statement, so a concurrent publish cannot let a vacancy change through.
+    const { rows } = await this.pool.query<{ id: string }>(
+      `update job_openings set title = coalesce($2, title), description = coalesce($3, description),
+         vacancies = coalesce($4, vacancies)
+       where id = $1 and ($4::int is null or status = 'Draft') returning id`,
+      [id, e.title ?? null, e.description ?? null, e.vacancies ?? null],
+    );
+    if (rows.length > 0) return (await this.get(id)) ?? 'not_found';
+    return (await this.get(id)) ? 'vacancies_locked' : 'not_found';
+  }
+
+  async listPublished(): Promise<JobOpening[]> {
+    const { rows } = await this.pool.query<Row>(`${SELECT} where o.status = 'Published' order by o.created_at, o.id`);
+    return rows.map(toOpening);
   }
 
   async listHiringManagers(): Promise<HiringManager[]> {

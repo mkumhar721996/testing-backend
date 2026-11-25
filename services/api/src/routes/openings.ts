@@ -1,6 +1,6 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import type { Authenticator, Principal } from '../auth.js';
-import type { NewOpening } from '../openings/domain.js';
+import type { NewOpening, OpeningEdit } from '../openings/domain.js';
 import type { OpeningsRepository } from '../openings/repository.js';
 
 declare module 'fastify' {
@@ -16,6 +16,18 @@ const createSchema = {
     properties: {
       title: { type: 'string', minLength: 1 },
       hiringManagerId: { type: 'string', minLength: 1 },
+      vacancies: { type: 'integer', minimum: 1 },
+    },
+  },
+} as const;
+
+const editSchema = {
+  body: {
+    type: 'object',
+    minProperties: 1,
+    properties: {
+      title: { type: 'string' },
+      description: { type: 'string' },
       vacancies: { type: 'integer', minimum: 1 },
     },
   },
@@ -52,6 +64,30 @@ export function openingsRoutes(deps: { repository: OpeningsRepository; authentic
         const created = await repository.create({ ...req.body, title: req.body.title.trim() });
         if (!created) return reply.code(400).send({ error: 'Choose a hiring manager.' });
         return reply.code(201).send(created);
+      },
+    );
+
+    app.patch<{ Params: { id: string }; Body: OpeningEdit }>(
+      '/openings/:id',
+      { onRequest: requireHrAdmin, schema: editSchema },
+      async (req, reply) => {
+        const edit = { ...req.body };
+        if (edit.title !== undefined) {
+          edit.title = edit.title.trim();
+          if (edit.title === '') return reply.code(400).send({ error: 'Enter a job title.' });
+        }
+        if (edit.description !== undefined) {
+          edit.description = edit.description.trim();
+          if (edit.description === '') {
+            return reply.code(400).send({ error: 'Enter a description so candidates know what the role involves.' });
+          }
+        }
+        const result = await repository.update(req.params.id, edit);
+        if (result === 'not_found') return reply.code(404).send({ error: 'Opening not found.' });
+        if (result === 'vacancies_locked') {
+          return reply.code(409).send({ error: 'The vacancy count is locked once an opening is published.' });
+        }
+        return result;
       },
     );
 
