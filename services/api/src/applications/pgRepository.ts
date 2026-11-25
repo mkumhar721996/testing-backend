@@ -35,7 +35,8 @@ export class PgApplicationsRepository implements ApplicationsRepository {
     const client = await this.pool.connect();
     try {
       await client.query('begin');
-      // Locking the opening serialises concurrent applications to it; the check below reads other openings.
+      // The duplicate check reads applications on other openings, so serialise per candidate, not per opening.
+      await client.query('select pg_advisory_xact_lock(hashtext($1))', [email]);
       const opening = await client.query<{ status: OpeningStatus }>(
         'select status from job_openings where id = $1 for update',
         [n.openingId],

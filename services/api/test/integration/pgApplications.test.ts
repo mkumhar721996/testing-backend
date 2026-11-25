@@ -61,6 +61,16 @@ describe.skipIf(!url)('PgApplicationsRepository', () => {
     expect((second as { id: string }).id).not.toBe((first as { id: string }).id);
   });
 
+  it('lets only one of concurrent unconfirmed applications to different openings through', async () => {
+    const a = await published('Race A');
+    const b = await published('Race B');
+    const n = { candidateName: 'Di', candidateEmail: 'di@example.com' };
+    const results = await Promise.all([repo.create({ ...n, openingId: a.id }), repo.create({ ...n, openingId: b.id })]);
+    expect(results.filter((r) => r === 'confirmation_required')).toHaveLength(1);
+    const { rows } = await pool.query('select 1 from applications where candidate_email = $1', ['di@example.com']);
+    expect(rows).toHaveLength(1);
+  });
+
   it('keeps existing job_openings readable', async () => {
     expect((await openings.list()).length).toBeGreaterThan(0);
   });
