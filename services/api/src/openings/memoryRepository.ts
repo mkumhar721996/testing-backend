@@ -1,6 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import {
   close,
+  isOpenToPublic,
+  toPublicOpening,
+  type PublicOpening,
   OpeningAlreadyPublishedError,
   OpeningNotPublishedError,
   publish,
@@ -16,6 +19,15 @@ export class MemoryOpeningsRepository implements OpeningsRepository {
     return [...this.openings];
   }
 
+  async listOpen(): Promise<PublicOpening[]> {
+    return this.openings.filter(isOpenToPublic).map(toPublicOpening);
+  }
+
+  async getOpen(id: string): Promise<PublicOpening | null> {
+    const o = this.openings.find((x) => x.id === id);
+    return o && isOpenToPublic(o) ? toPublicOpening(o) : null;
+  }
+
   async create(n: NewOpening): Promise<JobOpening | null> {
     const manager = this.managers.find((m) => m.id === n.hiringManagerId);
     if (!manager) return null;
@@ -26,6 +38,10 @@ export class MemoryOpeningsRepository implements OpeningsRepository {
       vacancies: n.vacancies,
       status: 'Draft',
       createdAt: new Date().toISOString(),
+      location: n.location ?? null,
+      employmentType: n.employmentType ?? null,
+      closingDate: n.closingDate ?? null,
+      description: n.description ?? null,
     };
     this.openings.push(opening);
     return opening;

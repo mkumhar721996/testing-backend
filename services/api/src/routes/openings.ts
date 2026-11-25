@@ -17,6 +17,10 @@ const createSchema = {
       title: { type: 'string', minLength: 1 },
       hiringManagerId: { type: 'string', minLength: 1 },
       vacancies: { type: 'integer', minimum: 1 },
+      location: { type: 'string' },
+      employmentType: { type: 'string' },
+      closingDate: { type: 'string', format: 'date' },
+      description: { type: 'string' },
     },
   },
 } as const;

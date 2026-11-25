@@ -3,6 +3,7 @@ import type { Authenticator } from './auth.js';
 import type { OpeningsRepository } from './openings/repository.js';
 import { healthRoutes } from './routes/health.js';
 import { openingsRoutes } from './routes/openings.js';
+import { publicOpeningsRoutes } from './routes/publicOpenings.js';
 
 export interface AppDeps {
   repository: OpeningsRepository;
@@ -30,5 +31,6 @@ export function buildApp(deps: AppDeps): FastifyInstance {
   }
   app.register(healthRoutes);
   app.register(openingsRoutes(deps));
+  app.register(publicOpeningsRoutes(deps));
   return app;
 }
