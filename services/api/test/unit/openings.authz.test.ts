@@ -29,6 +29,18 @@ describe('authorisation', () => {
     expect((await repo.list())[0].status).toBe('Draft');
   });
 
+  it('refuses edit for a non-HR user (AC6)', async () => {
+    const { app, repo } = setup();
+    const o = await repo.create({ title: 'Senior Engineer', hiringManagerId: mgr.id, vacancies: 1 });
+    await repo.publish(o!.id);
+    const url = `/openings/${o!.id}`;
+    const res = await app.inject({ method: 'PATCH', url, headers: nonHr, payload: { title: 'Staff Engineer' } });
+    expect(res.statusCode).toBe(403);
+    expect((await repo.list())[0].title).toBe('Senior Engineer');
+    expect((await app.inject({ method: 'PATCH', url, payload: { title: 'X' } })).statusCode).toBe(401);
+    expect((await app.inject({ method: 'PATCH', url, headers: nonHr, payload: {} })).statusCode).toBe(403);
+  });
+
   it('lets a non-HR user view the list', async () => {
     const { app } = setup();
     expect((await app.inject({ method: 'GET', url: '/openings', headers: nonHr })).statusCode).toBe(200);

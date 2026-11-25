@@ -61,6 +61,39 @@ paths:
         '400': { $ref: '#/components/responses/Error' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Error' }
+  /openings/{id}:
+    patch:
+      summary: Edit an opening (HR admins only); vacancies change on a Draft only
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OpeningEdit' }
+      responses:
+        '200':
+          description: The edited opening
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/JobOpening' }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+  /portal/openings:
+    get:
+      summary: Published openings as candidates see them (public)
+      security: []
+      responses:
+        '200':
+          description: Published openings
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/PortalOpening' }
   /openings/{id}/publish:
     post:
       summary: Publish a Draft opening (HR admins only)
@@ -112,12 +145,28 @@ components:
         title: { type: string, minLength: 1 }
         hiringManagerId: { type: string, minLength: 1 }
         vacancies: { type: integer, minimum: 1 }
-    JobOpening:
+    OpeningEdit:
       type: object
-      required: [id, title, hiringManager, vacancies, status, createdAt]
+      minProperties: 1
+      properties:
+        title: { type: string }
+        description: { type: string }
+        vacancies: { type: integer, minimum: 1 }
+    PortalOpening:
+      type: object
+      required: [id, title, description, vacancies]
       properties:
         id: { type: string }
         title: { type: string }
+        description: { type: string }
+        vacancies: { type: integer, minimum: 1 }
+    JobOpening:
+      type: object
+      required: [id, title, description, hiringManager, vacancies, status, createdAt]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        description: { type: string }
         hiringManager: { $ref: '#/components/schemas/HiringManager' }
         vacancies: { type: integer, minimum: 1 }
         status: { type: string, enum: [Draft, Published] }
