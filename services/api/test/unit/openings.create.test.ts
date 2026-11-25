@@ -57,3 +57,19 @@ describe('GET /hiring-managers and /me', () => {
     expect(res.json()).toEqual({ isHrAdmin: true });
   });
 });
+
+describe('POST /openings public fields', () => {
+  it('accepts and returns the optional public fields', async () => {
+    const { app } = setup();
+    const payload = { ...valid, location: 'Berlin', employmentType: 'Full-time', closingDate: '2027-01-15', description: 'Text' };
+    const res = await app.inject({ method: 'POST', url: '/openings', headers: hr, payload });
+    expect(res.statusCode).toBe(201);
+    expect(res.json()).toMatchObject({ location: 'Berlin', employmentType: 'Full-time', closingDate: '2027-01-15', description: 'Text' });
+  });
+
+  it('rejects a malformed closing date', async () => {
+    const { app } = setup();
+    const res = await app.inject({ method: 'POST', url: '/openings', headers: hr, payload: { ...valid, closingDate: 'not-a-date' } });
+    expect(res.statusCode).toBe(400);
+  });
+});
